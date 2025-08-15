@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validator Agent - Question Validation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-section {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            padding: 0 40px 40px;
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .verdict-yes {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .verdict-no {
+            border-left-color: #dc3545;
+            background: #fff8f8;
+        }
+
+        .verdict-error {
+            border-left-color: #ffc107;
+            background: #fffef8;
+        }
+
+        .verdict-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .verdict-yes .verdict-badge {
+            background: #28a745;
+            color: white;
+        }
+
+        .verdict-no .verdict-badge {
+            background: #dc3545;
+            color: white;
+        }
+
+        .verdict-error .verdict-badge {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .reasoning {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .followup-questions {
+            margin-top: 20px;
+        }
+
+        .followup-questions h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .followup-questions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .followup-questions li {
+            background: white;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            color: #555;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .example-section {
+            background: #f8f9fa;
+            padding: 25px;
+            margin-top: 20px;
+            border-radius: 15px;
+        }
+
+        .example-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .example-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .example-item strong {
+            color: #667eea;
+        }
+
+        /* Slider Styles */
+        .slider-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .time-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e1e5e9;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .time-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .time-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .slider-label {
+            font-weight: 600;
+        }
+
+        .time-display {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border: 2px solid #e1e5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Validator Agent</h1>
+            <p>Validate questions and polls for your betting platform</p>
+        </div>
+
+        <div class="form-section">
+            <form id="validationForm">
+                <div class="form-group">
+                    <label for="questionContent">Question Content:</label>
+                    <textarea 
+                        id="questionContent" 
+                        name="questionContent" 
+                        placeholder="Enter your question or poll here..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="timeSlider">Time from now (0 to 72 hours):</label>
+                    <div class="time-display" id="timeDisplay">
+                        Selected time: 72 hours from now
+                    </div>
+                    <div class="slider-container">
+                        <input 
+                            type="range" 
+                            id="timeSlider" 
+                            name="timeSlider" 
+                            min="0" 
+                            max="72" 
+                            value="72" 
+                            step="0.5"
+                            class="time-slider"
+                        >
+                        <div class="slider-labels">
+                            <span class="slider-label">Now</span>
+                            <span class="slider-label">72 hours</span>
+                        </div>
+                    </div>
+                    <div class="date-info" id="dateInfo" style="margin-top: 8px; font-size: 0.9rem; color: #666; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea;">
+                        Selected time: 72 hours from now
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Validate Question
+                </button>
+            </form>
+
+            <div class="example-section">
+                <h3>💡 Example Questions</h3>
+                <div class="example-item">
+                    <strong>Public Figures Meeting:</strong><br>
+                    "Will Donald Trump and Elon Musk meet in person within the next 72 hours?"
+                </div>
+                <div class="example-item">
+                    <strong>Product Launch:</strong><br>
+                    "Will Apple announce a new iPhone model before Friday?"
+                </div>
+                <div class="example-item">
+                    <strong>Sports Event:</strong><br>
+                    "Will the Lakers win their next game against the Warriors?"
+                </div>
+            </div>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Validating your question...</p>
+            </div>
+            
+            <div class="result-card" id="resultCard" style="display: none;">
+                <div class="verdict-badge" id="verdictBadge"></div>
+                <div class="reasoning" id="reasoning"></div>
+                <div class="followup-questions" id="followupQuestions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('validationForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const resultSection = document.getElementById('resultSection');
+            const loading = document.getElementById('loading');
+            const resultCard = document.getElementById('resultCard');
+            const verdictBadge = document.getElementById('verdictBadge');
+            const reasoning = document.getElementById('reasoning');
+            const followupQuestions = document.getElementById('followupQuestions');
+
+                        // Initialize time display and slider
+            const now = new Date();
+            const timeSlider = document.getElementById('timeSlider');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const dateInfo = document.getElementById('dateInfo');
+            
+            // Function to update time display based on slider value
+            function updateTimeDisplay() {
+                const hours = parseFloat(timeSlider.value);
+                const selectedTime = new Date(now.getTime() + (hours * 60 * 60 * 1000));
+                
+                // Format the selected time
+                const timeString = selectedTime.toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                });
+                
+                // Update the time display
+                if (hours === 0) {
+                    timeDisplay.innerHTML = `<strong>Now</strong> - ${timeString}`;
+                } else if (hours === 72) {
+                    timeDisplay.innerHTML = `<strong>72 hours from now</strong> - ${timeString}`;
+                } else {
+                    timeDisplay.innerHTML = `<strong>${hours} hours from now</strong> - ${timeString}`;
+                }
+                
+                // Update the info text
+                dateInfo.innerHTML = `Current time: <strong>${now.toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                })}</strong><br>Selected end time: <strong>${timeString}</strong>`;
+            }
+            
+            // Initialize display
+            updateTimeDisplay();
+            
+            // Add event listener to slider
+            timeSlider.addEventListener('input', updateTimeDisplay);
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const questionContent = document.getElementById('questionContent').value;
+                const hoursFromNow = parseFloat(document.getElementById('timeSlider').value);
+                
+                if (!questionContent) {
+                    alert('Please enter a question');
+                    return;
+                }
+                
+                // Calculate the end date based on slider value
+                const endDate = new Date(now.getTime() + (hoursFromNow * 60 * 60 * 1000));
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Validating...';
+                resultSection.style.display = 'block';
+                loading.style.display = 'block';
+                resultCard.style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/validate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            question_content: questionContent,
+                            end_date: new Date(endDate).toISOString()
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    // Hide loading, show result
+                    loading.style.display = 'none';
+                    resultCard.style.display = 'block';
+
+                    // Set verdict class and badge
+                    resultCard.className = `result-card verdict-${result.verdict}`;
+                    verdictBadge.textContent = result.verdict.toUpperCase();
+
+                    // Set reasoning
+                    reasoning.textContent = result.reasoning || 'No reasoning provided';
+
+                    // Set followup questions
+                    if (result.followup_questions && result.followup_questions.length > 0) {
+                        followupQuestions.innerHTML = `
+                            <h4>Follow-up Questions:</h4>
+                            <ul>
+                                ${result.followup_questions.map(q => `<li>${q}</li>`).join('')}
+                            </ul>
+                        `;
+                    } else {
+                        followupQuestions.innerHTML = '';
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    loading.style.display = 'none';
+                    resultCard.style.display = 'block';
+                    
+                    resultCard.className = 'result-card verdict-error';
+                    verdictBadge.textContent = 'ERROR';
+                    reasoning.textContent = 'An error occurred while validating your question. Please try again.';
+                    followupQuestions.innerHTML = '';
+                } finally {
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Validate Question';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
